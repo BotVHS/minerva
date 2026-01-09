@@ -14,6 +14,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 import org.jboss.logging.Logger;
 import io.vertx.core.http.HttpServerRequest;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +42,9 @@ public class UserResource {
 
     @Inject
     UserService userService;
+
+    @Inject
+    JsonWebToken jwt;
 
     @Context
     HttpServerRequest request;
@@ -319,7 +323,8 @@ public class UserResource {
     // Helper methods
 
     private User getCurrentUser(SecurityContext securityContext) {
-        String userId = securityContext.getUserPrincipal().getName();
+        // Get user ID from JWT subject claim (not from principal name which is the username)
+        String userId = jwt.getSubject();
         return User.findById(new org.bson.types.ObjectId(userId));
     }
 
