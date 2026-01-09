@@ -70,7 +70,7 @@ public class UserService {
      * @param userAgent User-Agent del client
      * @return nou usuari creat amb contrasenya temporal
      */
-    publicCreateUserResult createUser(User admin, String username, String email, String fullName,
+    public CreateUserResult createUser(User admin, String username, String email, String fullName,
                                       Set<UserRole> roles, String ipAddress, String userAgent) {
         LOG.infof("Creating new user: %s by admin: %s", username, admin.username);
 
@@ -139,7 +139,7 @@ public class UserService {
      * @param userAgent User-Agent del client
      * @return true si s'ha activat correctament
      */
-    publicboolean enable2FA(User user, String totpCode, String ipAddress, String userAgent) {
+    public boolean enable2FA(User user, String totpCode, String ipAddress, String userAgent) {
         if (user.totpSecret == null) {
             throw new IllegalStateException("TOTP secret not configured");
         }
@@ -173,7 +173,7 @@ public class UserService {
      * @param userAgent User-Agent del client
      * @return nou secret TOTP
      */
-    publicString reset2FA(User admin, User targetUser, String ipAddress, String userAgent) {
+    public String reset2FA(User admin, User targetUser, String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can reset 2FA");
         }
@@ -203,7 +203,7 @@ public class UserService {
      * @param userAgent User-Agent del client
      * @return true si s'ha canviat correctament
      */
-    publicboolean changePassword(User user, String oldPassword, String newPassword,
+    public boolean changePassword(User user, String oldPassword, String newPassword,
                                  String ipAddress, String userAgent) {
         // Validar contrasenya antiga
         if (!passwordHashService.verifyPassword(oldPassword, user.passwordHash)) {
@@ -241,7 +241,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    publicvoid assignRole(User admin, User targetUser, UserRole role,
+    public void assignRole(User admin, User targetUser, UserRole role,
                           String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can assign roles");
@@ -269,7 +269,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    publicvoid removeRole(User admin, User targetUser, UserRole role,
+    public void removeRole(User admin, User targetUser, UserRole role,
                           String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can remove roles");
@@ -296,7 +296,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    publicvoid enableUser(User admin, User targetUser, String ipAddress, String userAgent) {
+    public void enableUser(User admin, User targetUser, String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can enable users");
         }
@@ -320,7 +320,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    publicvoid disableUser(User admin, User targetUser, String ipAddress, String userAgent) {
+    public void disableUser(User admin, User targetUser, String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can disable users");
         }
@@ -344,7 +344,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    publicvoid unlockUser(User admin, User targetUser, String ipAddress, String userAgent) {
+    public void unlockUser(User admin, User targetUser, String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can unlock users");
         }
