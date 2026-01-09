@@ -8,7 +8,6 @@ import cat.minerva.security.TokenService;
 import cat.minerva.security.TotpService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -73,7 +72,6 @@ public class AuthService {
      * @param userAgent User-Agent del client
      * @return resultat de l'autenticació (inclou SessionToken si és exitosa)
      */
-    @Transactional
     public AuthResult authenticateCredentials(String username, String password,
                                              String ipAddress, String userAgent) {
         LOG.debugf("Authentication attempt for user: %s from IP: %s", username, ipAddress);
@@ -152,7 +150,6 @@ public class AuthService {
      * @param userAgent User-Agent del client
      * @return resultat amb Access Token i Refresh Token si és exitós
      */
-    @Transactional
     public AuthResult validate2FA(String userId, String totpCode,
                                  String ipAddress, String userAgent) {
         LOG.debugf("2FA validation attempt for user ID: %s", userId);
@@ -198,7 +195,6 @@ public class AuthService {
      * @param userAgent User-Agent del client
      * @return nous tokens si és exitós
      */
-    @Transactional
     public AuthResult refreshTokens(String refreshToken, String ipAddress, String userAgent) {
         String deviceFingerprint = calculateDeviceFingerprint(userAgent);
 
@@ -221,7 +217,6 @@ public class AuthService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    @Transactional
     public void logout(String refreshToken, User user, String ipAddress, String userAgent) {
         boolean revoked = tokenService.revokeRefreshToken(refreshToken, "User logout");
 
@@ -240,7 +235,6 @@ public class AuthService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    @Transactional
     public void logoutAll(User user, String ipAddress, String userAgent) {
         long count = tokenService.revokeAllUserTokens(user, "Global logout");
 

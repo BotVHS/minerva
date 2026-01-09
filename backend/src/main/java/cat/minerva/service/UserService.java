@@ -9,7 +9,6 @@ import cat.minerva.security.PasswordHashService;
 import cat.minerva.security.TotpService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
 import java.time.Instant;
@@ -71,8 +70,7 @@ public class UserService {
      * @param userAgent User-Agent del client
      * @return nou usuari creat amb contrasenya temporal
      */
-    @Transactional
-    public CreateUserResult createUser(User admin, String username, String email, String fullName,
+    publicCreateUserResult createUser(User admin, String username, String email, String fullName,
                                       Set<UserRole> roles, String ipAddress, String userAgent) {
         LOG.infof("Creating new user: %s by admin: %s", username, admin.username);
 
@@ -141,8 +139,7 @@ public class UserService {
      * @param userAgent User-Agent del client
      * @return true si s'ha activat correctament
      */
-    @Transactional
-    public boolean enable2FA(User user, String totpCode, String ipAddress, String userAgent) {
+    publicboolean enable2FA(User user, String totpCode, String ipAddress, String userAgent) {
         if (user.totpSecret == null) {
             throw new IllegalStateException("TOTP secret not configured");
         }
@@ -176,8 +173,7 @@ public class UserService {
      * @param userAgent User-Agent del client
      * @return nou secret TOTP
      */
-    @Transactional
-    public String reset2FA(User admin, User targetUser, String ipAddress, String userAgent) {
+    publicString reset2FA(User admin, User targetUser, String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can reset 2FA");
         }
@@ -207,8 +203,7 @@ public class UserService {
      * @param userAgent User-Agent del client
      * @return true si s'ha canviat correctament
      */
-    @Transactional
-    public boolean changePassword(User user, String oldPassword, String newPassword,
+    publicboolean changePassword(User user, String oldPassword, String newPassword,
                                  String ipAddress, String userAgent) {
         // Validar contrasenya antiga
         if (!passwordHashService.verifyPassword(oldPassword, user.passwordHash)) {
@@ -246,8 +241,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    @Transactional
-    public void assignRole(User admin, User targetUser, UserRole role,
+    publicvoid assignRole(User admin, User targetUser, UserRole role,
                           String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can assign roles");
@@ -275,8 +269,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    @Transactional
-    public void removeRole(User admin, User targetUser, UserRole role,
+    publicvoid removeRole(User admin, User targetUser, UserRole role,
                           String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can remove roles");
@@ -303,8 +296,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    @Transactional
-    public void enableUser(User admin, User targetUser, String ipAddress, String userAgent) {
+    publicvoid enableUser(User admin, User targetUser, String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can enable users");
         }
@@ -328,8 +320,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    @Transactional
-    public void disableUser(User admin, User targetUser, String ipAddress, String userAgent) {
+    publicvoid disableUser(User admin, User targetUser, String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can disable users");
         }
@@ -353,8 +344,7 @@ public class UserService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    @Transactional
-    public void unlockUser(User admin, User targetUser, String ipAddress, String userAgent) {
+    publicvoid unlockUser(User admin, User targetUser, String ipAddress, String userAgent) {
         if (!admin.isAdmin()) {
             throw new SecurityException("Only administrators can unlock users");
         }
