@@ -1,0 +1,74 @@
+# Minerva .gitignore
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# JWT Keys - NEVER COMMIT THESE!
+backend/src/main/resources/keys/
+keys/
+*.pem
+*.key
+
+# Java / Maven
+backend/target/
+backend/.mvn/
+backend/mvnw
+backend/mvnw.cmd
+*.class
+*.jar
+*.war
+*.ear
+*.log
+*.tmp
+
+# Quarkus
+backend/.quarkus/
+backend/quarkus.log
+
+# Angular / Node
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+*.swp
+*.swo
+*~
+
+# MongoDB
+data/
+*.db
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Secrets
+secrets/
+credentials/
+*.secret

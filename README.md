@@ -1,94 +1,299 @@
-# minerva
+# Minerva Security System
 
-Crea un sistema complet de login ultrasegur amb diferents nivells d'autorització, pensat per a un entorn governamental d’intel·ligència.
+Sistema complet d'autenticació i autorització ultrasegur pensat per entorns governamentals d'intel·ligència amb múltiples nivells d'autorització.
 
-BACKEND:
-- Framework: **Quarkus (Java)**.
-- Base de dades: **MongoDB**.
-- No hi ha registre públic; només **administradors poden crear usuaris**.
-- Implementa **RBAC (Role-Based Access Control)** amb rols com: ADMIN, ANALISTA, SUPERVISOR, CONTRIBUIDOR.
-- Tot el sistema ha d’estar dissenyat per ser **auditable, immutable i resistent a atacs avançats**.
+## 🔒 Característiques Principals
 
-SEGURETAT (OBLIGATÒRIA):
-1. **Autenticació**
-   - Hashing de contrasenyes amb **Argon2id + salt únic per usuari**.
-   - Política de contrasenyes fortes (mínim 12 caràcters, complexitat alta).
-   - **2FA obligatori per a tots els usuaris**, amb suport per:
-     - TOTP (RFC 6238)
-     - Apps com **Authy / Google Authenticator**
-     - **U2F / FIDO2** amb clau física
-   - El login no és complet fins que el 2FA és validat.
+- **Autenticació Forta**: Argon2id + 2FA obligatori (TOTP/U2F)
+- **Tokens Segurs**: JWT (RS256) + Refresh tokens amb rotació automàtica
+- **RBAC**: Control d'accés basat en rols (ADMIN, SUPERVISOR, ANALISTA, CONTRIBUIDOR)
+- **Logs Immutables**: Sistema tipus blockchain per auditories
+- **Seguretat en Profunditat**: Rate limiting, bloqueig de comptes, headers de seguretat
+- **Sense Registre Públic**: Només administradors poden crear usuaris
 
-2. **Sessions**
-   - **Access tokens de vida molt curta** (5–10 minuts).
-   - **Refresh tokens**:
-     - Emmagatzemats xifrats a MongoDB.
-     - Rotació automàtica en cada ús.
-     - Invalidació immediata en logout o comportament sospitós.
-   - Vincula els tokens a fingerprint de dispositiu (user-agent + hash).
+## 🏗️ Arquitectura
 
-3. **Autorització**
-   - Middleware de seguretat per protegir rutes segons rol.
-   - Accés explícit denegat per defecte (deny-by-default).
-   - Possibilitat de permisos més fins (RBAC + ABAC opcional).
+### Backend
+- **Framework**: Quarkus (Java 17)
+- **Base de Dades**: MongoDB 7.0
+- **Autenticació**: JWT (RS256), Argon2id, TOTP (RFC 6238)
+- **API**: RESTful amb validació i protecció RBAC
 
-4. **Logs immutables i auditories**
-   - **TOTES les accions han de quedar registrades**:
-     - Login (èxit/fallida)
-     - Validació 2FA
-     - Creació, modificació o desactivació d’usuaris
-     - Canvi de rols
-     - Accés a recursos sensibles
-   - Els logs han de ser **immutables i no modificables**:
-     - Escrits en una col·lecció append-only
-     - Cada entrada signada criptogràficament (hash encadenat tipus blockchain)
-     - Qualsevol alteració ha de ser detectable
-   - Incloure timestamps, IP, usuari, rol, acció i resultat.
-   - Preparat per auditories de seguretat.
+### Frontend (En desenvolupament)
+- **Framework**: Angular (última versió estable)
+- **Autenticació**: Formulari en dues fases (credencials + 2FA)
+- **Panell Admin**: Gestió d'usuaris, rols i logs
 
-5. **Proteccions addicionals**
-   - Rate limiting i detecció de força bruta.
-   - Bloqueig de compte després de múltiples intents fallits.
-   - Prevenció de NoSQL injection, XSS i CSRF.
-   - Headers de seguretat (CSP, HSTS, etc.).
+## 📁 Estructura del Projecte
 
-FUNCIONALITATS BACKEND:
-- Endpoint de login amb:
-  - usuari + contrasenya
-  - verificació 2FA
-  - retorn d’access token + refresh token
-- Endpoint per:
-  - Crear usuaris (només admins)
-  - Assignar rols
-  - Activar/desactivar comptes
-  - Canviar contrasenya
-- Middleware de seguretat reutilitzable.
-- Serveis clarament separats (auth, users, audit).
+```
+minerva/
+├── backend/                          # Backend Quarkus
+│   ├── src/main/java/cat/minerva/
+│   │   ├── model/                    # Models de dades
+│   │   │   ├── User.java
+│   │   │   ├── UserRole.java
+│   │   │   ├── RefreshToken.java
+│   │   │   └── AuditLog.java
+│   │   ├── repository/               # Repositoris MongoDB
+│   │   ├── service/                  # Serveis de negoci
+│   │   │   ├── AuthService.java
+│   │   │   └── UserService.java
+│   │   ├── security/                 # Components de seguretat
+│   │   │   ├── PasswordHashService.java  # Argon2id
+│   │   │   ├── TotpService.java          # 2FA (TOTP)
+│   │   │   └── TokenService.java         # JWT + Refresh
+│   │   ├── audit/                    # Sistema d'auditoria
+│   │   │   └── AuditService.java
+│   │   ├── resource/                 # Endpoints REST
+│   │   └── dto/                      # Data Transfer Objects
+│   ├── src/main/resources/
+│   │   ├── application.properties
+│   │   └── keys/                     # Claus JWT (NO a Git!)
+│   └── pom.xml
+├── frontend/                         # Frontend Angular (en desenvolupament)
+├── mongodb-setup.js                  # Script de configuració MongoDB
+├── docker-compose.yml                # Desplegament amb Docker
+├── scripts/
+│   └── generate-keys.sh              # Generador de claus JWT
+├── SECURITY.md                       # Documentació de seguretat
+├── USAGE_EXAMPLES.md                 # Exemples d'ús de l'API
+├── DEPLOYMENT.md                     # Guia de desplegament
+└── README.md
+```
 
-FRONTEND:
-- Framework: **Angular (última versió estable)**.
-- Formulari de login en dues fases:
-  1. Usuari + contrasenya
-  2. Validació 2FA (TOTP o clau física si està configurada)
-- Gestió segura dels tokens:
-  - Access token en memòria
-  - Refresh token amb proteccions adequades
-- Panell d’administració:
-  - Crear usuaris
-  - Assignar rols
-  - Forçar reset de 2FA
-  - Veure logs d’auditoria (read-only)
-- Protecció de rutes segons rol.
+## 🚀 Quick Start
 
-ADICIONAL:
-- Codi **modular, net i fortament comentat**.
-- Pensat per mantenibilitat a llarg termini (10–20 anys).
-- Explica breument cada decisió de seguretat i per què s’ha escollit.
-- Proporciona:
-  1. Estructura de carpetes backend i frontend.
-  2. Codi principal funcional (Quarkus + Angular).
-  3. Exemple de configuració segura de MongoDB.
-  4. Exemple de log immutable amb hash encadenat.
-  5. Exemple de flux complet de login amb 2FA i refresh tokens.
+### 1. Prerequisits
 
-Assegura’t que el sistema sigui **extremadament segur, auditable, resistent a manipulacions i adequat per a un projecte d’intel·ligència governamental**.
+```bash
+# Java 17+
+java -version
+
+# Maven 3.8+
+mvn -version
+
+# MongoDB 7.0+
+mongod --version
+
+# Docker (opcional)
+docker --version
+```
+
+### 2. Clonar i Configurar
+
+```bash
+# Clonar repositori
+git clone https://github.com/yourgov/minerva.git
+cd minerva
+
+# Copiar variables d'entorn
+cp .env.example .env
+
+# Generar claus JWT
+./scripts/generate-keys.sh
+```
+
+### 3. Executar amb Docker Compose (Recomanat)
+
+```bash
+# Aixecar tots els serveis
+docker-compose up -d
+
+# Verificar estat
+docker-compose ps
+
+# Veure logs
+docker-compose logs -f backend
+```
+
+L'aplicació estarà disponible a:
+- Backend API: http://localhost:8080
+- Health Check: http://localhost:8080/health
+- MongoDB: localhost:27017
+
+### 4. Executar Manualment
+
+```bash
+# 1. Iniciar MongoDB
+docker run -d --name minerva-mongo -p 27017:27017 mongo:7.0
+
+# 2. Configurar MongoDB
+docker exec -i minerva-mongo mongosh < mongodb-setup.js
+
+# 3. Executar backend
+cd backend
+./mvnw quarkus:dev
+```
+
+## 🔐 Seguretat Implementada
+
+### 1. Autenticació Multi-Factor
+
+- **Argon2id**: Hashing de contrasenyes (guanyador Password Hashing Competition 2015)
+  - Iteracions: 3, Memòria: 64MB, Paral·lelisme: 4
+  - Salt únic aleatori per cada usuari
+  - Resistent a atacs GPU i ASIC
+
+- **2FA Obligatori**: TOTP (RFC 6238)
+  - Compatible amb Google Authenticator, Authy, etc.
+  - Codis de 6 dígits renovats cada 30 segons
+  - Preparació per U2F/FIDO2 (YubiKey, etc.)
+
+### 2. Sistema de Tokens de Doble Capa
+
+- **Access Token (JWT)**:
+  - Vida curta: 5-10 minuts
+  - Signat amb RS256 (clau asimètrica)
+  - No es pot revocar (per això és curt)
+  - Conté userId, username, roles
+
+- **Refresh Token**:
+  - Vida llarga: 24 hores
+  - Emmagatzemat com hash SHA-256 a MongoDB
+  - **Rotació automàtica**: cada ús genera un nou token
+  - Vinculat a dispositiu (fingerprint)
+  - Detecció de reutilització (possible atac)
+
+### 3. Logs Immutables (Tipus Blockchain)
+
+Cada entrada de log conté:
+```
+currentHash = SHA256(previousHash + contingut)
+```
+
+Si algú modifica un log, la cadena es trenca i és detectable.
+
+**Què es registra:**
+- ✅ Tots els intents de login (èxit/fallida)
+- ✅ Validació 2FA
+- ✅ Creació/modificació d'usuaris
+- ✅ Canvis de rols i permisos
+- ✅ Bloqueig/desbloqueig de comptes
+- ✅ Activitat sospitosa
+
+### 4. Proteccions Addicionals
+
+- ✅ **Rate Limiting**: Màx 10 intents/minut per IP
+- ✅ **Bloqueig de Compte**: 5 intents fallits → bloqueig 30 min
+- ✅ **Headers de Seguretat**: CSP, HSTS, X-Frame-Options, etc.
+- ✅ **Prevenció d'Injeccions**: NoSQL Injection, XSS, CSRF
+- ✅ **Deny-by-Default**: Tot denegat excepte explícitament permès
+
+## 📖 Exemples d'Ús
+
+### Login Complet (2 Fases)
+
+```bash
+# Fase 1: Credencials
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "john.doe", "password": "MyPass123!@#"}'
+
+# Resposta: {"pending2FA": true, "sessionToken": "..."}
+
+# Fase 2: 2FA
+curl -X POST http://localhost:8080/api/auth/verify-2fa \
+  -H "Authorization: Bearer [sessionToken]" \
+  -d '{"userId": "...", "totpCode": "123456"}'
+
+# Resposta: {"accessToken": "...", "refreshToken": "..."}
+```
+
+### Renovar Tokens
+
+```bash
+curl -X POST http://localhost:8080/api/auth/refresh \
+  -d '{"refreshToken": "..."}'
+```
+
+### Crear Usuari (Admin)
+
+```bash
+curl -X POST http://localhost:8080/api/users \
+  -H "Authorization: Bearer [adminToken]" \
+  -d '{
+    "username": "maria.garcia",
+    "email": "maria@gov.cat",
+    "roles": ["ANALISTA"]
+  }'
+```
+
+Més exemples: [USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)
+
+## 📚 Documentació
+
+- **[SECURITY.md](SECURITY.md)**: Documentació completa de seguretat i decisions tècniques
+- **[USAGE_EXAMPLES.md](USAGE_EXAMPLES.md)**: Exemples pràctics d'ús de l'API
+- **[DEPLOYMENT.md](DEPLOYMENT.md)**: Guia de desplegament en producció
+
+## 🛠️ Tecnologies Utilitzades
+
+| Component | Tecnologia | Versió | Raó d'Elecció |
+|-----------|-----------|--------|---------------|
+| Backend | Quarkus | 3.6.4 | Alt rendiment, natiu a Kubernetes |
+| Base de Dades | MongoDB | 7.0 | Escalabilitat, flexibilitat |
+| Hashing | Argon2id | 2.11 | Estàndard OWASP, resistent a GPU |
+| 2FA | TOTP (RFC 6238) | - | Estàndard universal |
+| JWT | SmallRye JWT | - | Integració nativa Quarkus |
+| QR Codes | ZXing | 3.5.2 | Configuració 2FA |
+| Rate Limiting | Resilience4j | 2.1.0 | Protecció contra força bruta |
+
+## 🔧 Desenvolupament
+
+### Executar Tests
+
+```bash
+cd backend
+./mvnw test
+```
+
+### Mode Desenvolupament
+
+```bash
+./mvnw quarkus:dev
+```
+
+Amb hot-reload automàtic en canvis de codi.
+
+## 🚢 Desplegament en Producció
+
+Consulta la guia completa: [DEPLOYMENT.md](DEPLOYMENT.md)
+
+Checklist ràpid:
+- [ ] MongoDB amb autenticació i TLS
+- [ ] Claus JWT de 4096 bits generades
+- [ ] HTTPS configurat amb certificat vàlid
+- [ ] Firewall configurat
+- [ ] Backups automàtics de logs d'auditoria
+- [ ] Monitorització i alertes actives
+
+## 🤝 Contribució
+
+Aquest és un projecte de seguretat crítica. Totes les contribucions han de:
+1. Passar revisió de seguretat
+2. Incloure tests exhaustius
+3. Documentar decisions de seguretat
+4. Seguir les millors pràctiques OWASP
+
+## 📄 Llicència
+
+[Definir llicència segons política governamental]
+
+## ⚠️ Advertències de Seguretat
+
+- **MAI** pujar claus JWT a control de versions
+- **MAI** guardar access tokens en localStorage
+- **SEMPRE** usar HTTPS en producció
+- **SEMPRE** canviar contrasenyes per defecte
+- **SEMPRE** verificar integritat de logs periòdicament
+
+## 📞 Suport
+
+Per qüestions de seguretat o incidents, contacta:
+- Email: security@yourgov.cat
+- Telèfon d'emergències: [DEFINIR]
+
+---
+
+**Minerva Security System** - Seguretat de nivell governamental per a entorns d'intel·ligència crítics.
