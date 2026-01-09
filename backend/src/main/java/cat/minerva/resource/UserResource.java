@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 import org.jboss.logging.Logger;
+import io.vertx.core.http.HttpServerRequest;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class UserResource {
     UserService userService;
 
     @Context
-    jakarta.servlet.http.HttpServletRequest httpRequest;
+    HttpServerRequest request;
 
     /**
      * Crear nou usuari (només ADMIN).
@@ -323,15 +324,22 @@ public class UserResource {
     }
 
     private String getClientIp() {
-        String forwardedFor = httpRequest.getHeader("X-Forwarded-For");
+        // Comprovar si hi ha proxy (X-Forwarded-For)
+        String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isEmpty()) {
             return forwardedFor.split(",")[0].trim();
         }
-        return httpRequest.getRemoteAddr();
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isEmpty()) {
+            return realIp;
+        }
+
+        return request.remoteAddress().host();
     }
 
     private String getUserAgent() {
-        String userAgent = httpRequest.getHeader("User-Agent");
+        String userAgent = request.getHeader("User-Agent");
         return userAgent != null ? userAgent : "Unknown";
     }
 

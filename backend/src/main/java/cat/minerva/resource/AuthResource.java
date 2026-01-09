@@ -10,9 +10,11 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 import org.jboss.logging.Logger;
+import io.vertx.core.http.HttpServerRequest;
 
 /**
  * Endpoint REST per autenticació.
@@ -34,7 +36,7 @@ public class AuthResource {
     AuthService authService;
 
     @Context
-    jakarta.servlet.http.HttpServletRequest httpRequest;
+    HttpServerRequest request;
 
     /**
      * Fase 1: Login amb usuari i contrasenya.
@@ -191,24 +193,24 @@ public class AuthResource {
      */
     private String getClientIp() {
         // Comprovar si hi ha proxy (X-Forwarded-For)
-        String forwardedFor = httpRequest.getHeader("X-Forwarded-For");
+        String forwardedFor = request.getHeader("X-Forwarded-For");
         if (forwardedFor != null && !forwardedFor.isEmpty()) {
             return forwardedFor.split(",")[0].trim();
         }
 
-        String realIp = httpRequest.getHeader("X-Real-IP");
+        String realIp = request.getHeader("X-Real-IP");
         if (realIp != null && !realIp.isEmpty()) {
             return realIp;
         }
 
-        return httpRequest.getRemoteAddr();
+        return request.remoteAddress().host();
     }
 
     /**
      * Obté el User-Agent del client.
      */
     private String getUserAgent() {
-        String userAgent = httpRequest.getHeader("User-Agent");
+        String userAgent = request.getHeader("User-Agent");
         return userAgent != null ? userAgent : "Unknown";
     }
 
