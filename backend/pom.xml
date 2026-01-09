@@ -78,9 +78,9 @@
 
         <!-- TOTP per 2FA (RFC 6238) -->
         <dependency>
-            <groupId>com.github.bastiaanjansen</groupId>
-            <artifactId>otp-java</artifactId>
-            <version>2.0.3</version>
+            <groupId>dev.samstevens.totp</groupId>
+            <artifactId>totp</artifactId>
+            <version>1.7.1</version>
         </dependency>
 
         <!-- QR Code per configuració 2FA -->
@@ -106,6 +106,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-validator</artifactId>
+        </dependency>
+
+        <!-- Undertow per HttpServletRequest -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-undertow</artifactId>
         </dependency>
 
         <!-- Configuració YAML -->

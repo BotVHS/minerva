@@ -1,12 +1,22 @@
 package cat.minerva.security;
 
-import com.bastiaanjansen.otp.SecretGenerator;
-import com.bastiaanjansen.otp.TOTP;
-import com.bastiaanjansen.otp.TOTPGenerator;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
+import dev.samstevens.totp.code.CodeGenerator;
+import dev.samstevens.totp.code.CodeVerifier;
+import dev.samstevens.totp.code.DefaultCodeGenerator;
+import dev.samstevens.totp.code.DefaultCodeVerifier;
+import dev.samstevens.totp.code.HashingAlgorithm;
+import dev.samstevens.totp.exceptions.QrGenerationException;
+import dev.samstevens.totp.qr.QrData;
+import dev.samstevens.totp.qr.QrGenerator;
+import dev.samstevens.totp.qr.ZxingPngQrGenerator;
+import dev.samstevens.totp.secret.DefaultSecretGenerator;
+import dev.samstevens.totp.secret.SecretGenerator;
+import dev.samstevens.totp.time.SystemTimeProvider;
+import dev.samstevens.totp.time.TimeProvider;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -14,7 +24,6 @@ import org.jboss.logging.Logger;
 import java.io.ByteArrayOutputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Base64;
 
 /**
@@ -46,13 +55,14 @@ public class TotpService {
 
     private static final Logger LOG = Logger.getLogger(TotpService.class);
 
-    // Paràmetres TOTP (RFC 6238)
-    private static final Duration PERIOD = Duration.ofSeconds(30);  // Període de 30 segons
-    private static final int DIGITS = 6;  // Codis de 6 dígits
-    private static final int SECRET_SIZE = 160;  // 160 bits de secret
-
     @ConfigProperty(name = "minerva.security.totp.issuer", defaultValue = "Minerva Gov")
     String issuer;
+
+    private final SecretGenerator secretGenerator = new DefaultSecretGenerator();
+    private final QrGenerator qrGenerator = new ZxingPngQrGenerator();
+    private final CodeGenerator codeGenerator = new DefaultCodeGenerator();
+    private final TimeProvider timeProvider = new SystemTimeProvider();
+    private final CodeVerifier verifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
 
     /**
      * Genera un nou secret TOTP per un usuari.
@@ -64,10 +74,9 @@ public class TotpService {
      */
     public String generateSecret() {
         try {
-            byte[] secret = SecretGenerator.generate(SECRET_SIZE);
-            String base32Secret = Base64.getEncoder().encodeToString(secret);
+            String secret = secretGenerator.generate();
             LOG.debug("Generated new TOTP secret");
-            return base32Secret;
+            return secret;
         } catch (Exception e) {
             LOG.error("Error generating TOTP secret", e);
             throw new RuntimeException("Failed to generate TOTP secret", e);
@@ -86,31 +95,22 @@ public class TotpService {
      */
     public String generateQRCode(String username, String secret) {
         try {
-            // Construir la URI otpauth
-            String uri = String.format(
-                "otpauth://totp/%s:%s?secret=%s&issuer=%s&digits=%d&period=%d",
-                URLEncoder.encode(issuer, StandardCharsets.UTF_8),
-                URLEncoder.encode(username, StandardCharsets.UTF_8),
-                secret,
-                URLEncoder.encode(issuer, StandardCharsets.UTF_8),
-                DIGITS,
-                PERIOD.getSeconds()
-            );
+            QrData data = new QrData.Builder()
+                .label(username)
+                .secret(secret)
+                .issuer(issuer)
+                .algorithm(HashingAlgorithm.SHA1)
+                .digits(6)
+                .period(30)
+                .build();
 
-            // Generar QR code
-            QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            BitMatrix bitMatrix = qrCodeWriter.encode(uri, BarcodeFormat.QR_CODE, 300, 300);
+            byte[] imageData = qrGenerator.generate(data);
+            String base64Image = Base64.getEncoder().encodeToString(imageData);
 
-            // Convertir a imatge PNG
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", outputStream);
-
-            // Retornar com Base64 per enviar al client
-            String base64Image = Base64.getEncoder().encodeToString(outputStream.toByteArray());
             LOG.debugf("Generated QR code for user: %s", username);
-
             return base64Image;
-        } catch (Exception e) {
+
+        } catch (QrGenerationException e) {
             LOG.error("Error generating QR code", e);
             throw new RuntimeException("Failed to generate QR code", e);
         }
@@ -127,28 +127,14 @@ public class TotpService {
      * @return true si el codi és vàlid, false altrament
      */
     public boolean validateCode(String code, String secret) {
-        if (code == null || code.length() != DIGITS) {
+        if (code == null || code.length() != 6) {
             LOG.debug("Invalid TOTP code format");
             return false;
         }
 
         try {
-            // Decodificar el secret de Base64
-            byte[] secretBytes = Base64.getDecoder().decode(secret);
-
-            // Crear generador TOTP
-            TOTPGenerator totpGenerator = new TOTPGenerator.Builder(secretBytes)
-                .withPeriod(PERIOD)
-                .withPasswordLength(DIGITS)
-                .build();
-
-            // Crear instància TOTP
-            TOTP totp = new TOTP.Builder(totpGenerator)
-                .build();
-
             // Validar amb finestra de temps (±1 període = 90 segons total)
-            // Això compensa petites diferències de rellotge
-            boolean isValid = totp.verify(code, 1);
+            boolean isValid = verifier.isValidCode(secret, code);
 
             LOG.debugf("TOTP validation: %s", isValid ? "SUCCESS" : "FAILED");
             return isValid;
@@ -170,14 +156,8 @@ public class TotpService {
      */
     public String getCurrentCode(String secret) {
         try {
-            byte[] secretBytes = Base64.getDecoder().decode(secret);
-
-            TOTPGenerator totpGenerator = new TOTPGenerator.Builder(secretBytes)
-                .withPeriod(PERIOD)
-                .withPasswordLength(DIGITS)
-                .build();
-
-            String code = totpGenerator.now();
+            long currentBucket = Math.floorDiv(timeProvider.getTime(), 30);
+            String code = codeGenerator.generate(secret, currentBucket);
             LOG.debug("Generated current TOTP code (for testing only)");
             return code;
 
@@ -198,13 +178,8 @@ public class TotpService {
             return false;
         }
 
-        try {
-            byte[] decoded = Base64.getDecoder().decode(secret);
-            // El secret ha de tenir almenys 128 bits (16 bytes)
-            return decoded.length >= 16;
-        } catch (Exception e) {
-            return false;
-        }
+        // El secret ha de ser Base32 (A-Z, 2-7, =)
+        return secret.matches("^[A-Z2-7=]+$") && secret.length() >= 16;
     }
 
     /**
@@ -215,8 +190,8 @@ public class TotpService {
      * @return segons restants fins al proper codi
      */
     public long getSecondsUntilNextCode() {
-        long currentTime = System.currentTimeMillis() / 1000;
-        long period = PERIOD.getSeconds();
+        long currentTime = timeProvider.getTime();
+        long period = 30;
         return period - (currentTime % period);
     }
 }
