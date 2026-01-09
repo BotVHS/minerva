@@ -1,0 +1,538 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-01-09T19:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "env_minerva",
+      "_type": "environment",
+      "name": "Minerva Environment",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "access_token": "",
+        "refresh_token": "",
+        "session_token": "",
+        "user_id": "",
+        "admin_username": "admin",
+        "admin_password": "Admin123!@#"
+      },
+      "dataPropertyOrder": {
+        "&": [
+          "base_url",
+          "access_token",
+          "refresh_token",
+          "session_token",
+          "user_id",
+          "admin_username",
+          "admin_password"
+        ]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1,
+      "modified": 1704819600000,
+      "created": 1704819600000,
+      "parentId": "wrk_minerva"
+    },
+    {
+      "_id": "wrk_minerva",
+      "_type": "workspace",
+      "name": "Minerva Security API",
+      "description": "API completa del sistema de seguretat Minerva amb autenticació 2FA, RBAC i logs immutables",
+      "scope": "collection",
+      "parentId": null
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "name": "🔐 Authentication",
+      "description": "Endpoints d'autenticació: login 2-fases, refresh tokens, logout",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -1,
+      "parentId": "wrk_minerva"
+    },
+    {
+      "_id": "req_login_phase1",
+      "_type": "request",
+      "name": "1️⃣ Login - Phase 1 (Credentials)",
+      "url": "{{ _.base_url }}/api/auth/login",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"{{ _.admin_username }}\",\n  \"password\": \"{{ _.admin_password }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "description": "**Fase 1 del login**: Envia credencials (username + password)\n\n**Resposta esperada:**\n```json\n{\n  \"pending2FA\": true,\n  \"sessionToken\": \"eyJhbGci...\",\n  \"userId\": \"507f1f77bcf86cd799439011\",\n  \"message\": \"Introdueix el codi 2FA\"\n}\n```\n\n**Següent pas:** Copia `sessionToken` i `userId` a les variables d'entorn i executa Phase 2",
+      "parentId": "fld_auth"
+    },
+    {
+      "_id": "req_login_phase2",
+      "_type": "request",
+      "name": "2️⃣ Login - Phase 2 (2FA Validation)",
+      "url": "{{ _.base_url }}/api/auth/verify-2fa",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"userId\": \"{{ _.user_id }}\",\n  \"totpCode\": \"123456\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.session_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -2,
+      "isPrivate": false,
+      "description": "**Fase 2 del login**: Valida el codi 2FA (6 dígits)\n\n**Prerequisit:** Executa Phase 1 primer i guarda sessionToken i userId\n\n**Codi TOTP:** Obté'l de la teva app d'autenticació (Google Authenticator, Authy, etc.)\n\n**Resposta esperada:**\n```json\n{\n  \"success\": true,\n  \"accessToken\": \"eyJhbGci...\",\n  \"refreshToken\": \"7a8b9c0d...\",\n  \"user\": {\n    \"id\": \"507f1f77bcf86cd799439011\",\n    \"username\": \"admin\",\n    \"roles\": [\"ADMIN\"]\n  }\n}\n```\n\n**Següent pas:** Guarda accessToken i refreshToken a les variables d'entorn",
+      "parentId": "fld_auth"
+    },
+    {
+      "_id": "req_refresh_token",
+      "_type": "request",
+      "name": "🔄 Refresh Tokens",
+      "url": "{{ _.base_url }}/api/auth/refresh",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ _.refresh_token }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -3,
+      "description": "**Renova tokens:** Quan l'access token expira (5-10 min), usa el refresh token per obtenir nous tokens\n\n**Rotació automàtica:** El refresh token antic s'invalida i en reps un de nou\n\n**Resposta:**\n```json\n{\n  \"success\": true,\n  \"accessToken\": \"eyJhbGci...\",  // NOU\n  \"refreshToken\": \"9i8h7g6f...\"   // NOU (rotació)\n}\n```\n\n**IMPORTANT:** Actualitza ambdós tokens a les variables d'entorn",
+      "parentId": "fld_auth"
+    },
+    {
+      "_id": "req_logout",
+      "_type": "request",
+      "name": "🚪 Logout",
+      "url": "{{ _.base_url }}/api/auth/logout",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ _.refresh_token }}\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -4,
+      "description": "**Logout:** Revoca el refresh token\n\nL'access token seguirà funcionant fins que expiri (5-10 min), però no podràs renovar-lo",
+      "parentId": "fld_auth"
+    },
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "name": "👥 User Management (ADMIN)",
+      "description": "Gestió d'usuaris: crear, modificar, assignar rols (només ADMIN)",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -2,
+      "parentId": "wrk_minerva"
+    },
+    {
+      "_id": "req_create_user",
+      "_type": "request",
+      "name": "➕ Create User",
+      "url": "{{ _.base_url }}/api/users",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"maria.garcia\",\n  \"email\": \"maria.garcia@minerva.gov\",\n  \"fullName\": \"Maria Garcia López\",\n  \"roles\": [\"ANALISTA\"]\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1,
+      "description": "**Crear usuari** (només ADMIN)\n\n**Rols disponibles:**\n- ADMIN\n- SUPERVISOR\n- ANALISTA\n- CONTRIBUIDOR\n\n**Resposta:**\n```json\n{\n  \"success\": true,\n  \"user\": {...},\n  \"temporaryPassword\": \"Xy9$mK2#pL5@qW8!\",\n  \"message\": \"Usuari creat. Contrasenya temporal: ...\"\n}\n```\n\n⚠️ **IMPORTANT:** La contrasenya temporal només es mostra UNA vegada!",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_list_users",
+      "_type": "request",
+      "name": "📋 List All Users",
+      "url": "{{ _.base_url }}/api/users",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -2,
+      "description": "**Llistar tots els usuaris** (ADMIN + SUPERVISOR)\n\nRetorna array amb tots els usuaris del sistema (sense dades sensibles)",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_get_user",
+      "_type": "request",
+      "name": "🔍 Get User by ID",
+      "url": "{{ _.base_url }}/api/users/{{ _.user_id }}",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -3,
+      "description": "**Obtenir usuari per ID** (ADMIN + SUPERVISOR)\n\nSubstitueix {{ _.user_id }} amb l'ID real de l'usuari",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_assign_role",
+      "_type": "request",
+      "name": "⭐ Assign Role to User",
+      "url": "{{ _.base_url }}/api/users/{{ _.user_id }}/roles",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"role\": \"SUPERVISOR\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -4,
+      "description": "**Assignar rol a usuari** (només ADMIN)\n\nRols disponibles: ADMIN, SUPERVISOR, ANALISTA, CONTRIBUIDOR",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_remove_role",
+      "_type": "request",
+      "name": "❌ Remove Role from User",
+      "url": "{{ _.base_url }}/api/users/{{ _.user_id }}/roles/ANALISTA",
+      "method": "DELETE",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -5,
+      "description": "**Eliminar rol d'usuari** (només ADMIN)\n\nCanvia ANALISTA per el rol que vols eliminar",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_enable_user",
+      "_type": "request",
+      "name": "✅ Enable User",
+      "url": "{{ _.base_url }}/api/users/{{ _.user_id }}/enable",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -6,
+      "description": "**Activar compte d'usuari** (només ADMIN)",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_disable_user",
+      "_type": "request",
+      "name": "🚫 Disable User",
+      "url": "{{ _.base_url }}/api/users/{{ _.user_id }}/disable",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -7,
+      "description": "**Desactivar compte d'usuari** (només ADMIN)\n\nL'usuari no podrà fer login fins que es reactivi",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_unlock_user",
+      "_type": "request",
+      "name": "🔓 Unlock User Account",
+      "url": "{{ _.base_url }}/api/users/{{ _.user_id }}/unlock",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -8,
+      "description": "**Desbloquejar compte** (només ADMIN)\n\nUtilitzat quan un usuari ha tingut massa intents de login fallits",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "req_reset_2fa",
+      "_type": "request",
+      "name": "🔄 Reset 2FA",
+      "url": "{{ _.base_url }}/api/users/{{ _.user_id }}/reset-2fa",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -9,
+      "description": "**Reset 2FA** (només ADMIN)\n\nGenera un nou QR code quan l'usuari perd accés a la seva app d'autenticació\n\n**Resposta:**\n```json\n{\n  \"success\": true,\n  \"qrCode\": \"data:image/png;base64,...\",\n  \"message\": \"2FA reset. L'usuari ha d'escanejar el nou QR code\"\n}\n```",
+      "parentId": "fld_users"
+    },
+    {
+      "_id": "fld_audit",
+      "_type": "request_group",
+      "name": "📋 Audit Logs (ADMIN/SUPERVISOR)",
+      "description": "Consulta de logs d'auditoria immutables (read-only)",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -3,
+      "parentId": "wrk_minerva"
+    },
+    {
+      "_id": "req_all_logs",
+      "_type": "request",
+      "name": "📜 Get All Logs",
+      "url": "{{ _.base_url }}/api/audit/logs?limit=50",
+      "method": "GET",
+      "body": {},
+      "parameters": [
+        {
+          "name": "limit",
+          "value": "50",
+          "description": "Nombre màxim de resultats"
+        }
+      ],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1,
+      "description": "**Tots els logs d'auditoria** (ADMIN + SUPERVISOR)\n\n**Query params opcionals:**\n- `limit`: màxim resultats (default: 100)\n- `from`: timestamp inicial (ISO 8601)\n- `to`: timestamp final (ISO 8601)\n\nExemple amb dates:\n`/api/audit/logs?from=2025-01-01T00:00:00Z&to=2025-01-09T23:59:59Z`",
+      "parentId": "fld_audit"
+    },
+    {
+      "_id": "req_user_logs",
+      "_type": "request",
+      "name": "👤 Get User Logs",
+      "url": "{{ _.base_url }}/api/audit/logs/user/{{ _.user_id }}",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -2,
+      "description": "**Logs d'un usuari específic** (ADMIN + SUPERVISOR)\n\nSubstitueix {{ _.user_id }} amb l'ID real de l'usuari",
+      "parentId": "fld_audit"
+    },
+    {
+      "_id": "req_failed_logins",
+      "_type": "request",
+      "name": "❌ Failed Login Attempts",
+      "url": "{{ _.base_url }}/api/audit/logs/failed-logins",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -3,
+      "description": "**Intents de login fallits** (ADMIN + SUPERVISOR)\n\nÚtil per detectar intents de força bruta",
+      "parentId": "fld_audit"
+    },
+    {
+      "_id": "req_suspicious_activity",
+      "_type": "request",
+      "name": "⚠️ Suspicious Activity",
+      "url": "{{ _.base_url }}/api/audit/logs/suspicious",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -4,
+      "description": "**Activitat sospitosa** (ADMIN + SUPERVISOR)\n\nInclou:\n- Comptes bloquejats\n- Rate limit excedit\n- Detecció d'activitat anòmala",
+      "parentId": "fld_audit"
+    },
+    {
+      "_id": "req_admin_actions",
+      "_type": "request",
+      "name": "👑 Admin Actions",
+      "url": "{{ _.base_url }}/api/audit/logs/admin-actions",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -5,
+      "description": "**Accions d'administració** (només ADMIN)\n\nInclou:\n- Creació/modificació d'usuaris\n- Assignació de rols\n- Canvis de configuració",
+      "parentId": "fld_audit"
+    },
+    {
+      "_id": "req_verify_integrity",
+      "_type": "request",
+      "name": "🔒 Verify Log Integrity",
+      "url": "{{ _.base_url }}/api/audit/verify-integrity",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.access_token }}"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -6,
+      "description": "**Verificar integritat de logs** (només ADMIN)\n\nComprova la cadena blockchain de hashs per detectar manipulacions\n\n**Resposta si tot correcte:**\n```json\n{\n  \"valid\": true,\n  \"totalLogs\": 12345,\n  \"message\": \"La cadena de logs és íntegra\"\n}\n```\n\n**Resposta si hi ha manipulació:**\n```json\n{\n  \"valid\": false,\n  \"totalLogs\": 12345,\n  \"message\": \"ALERTA: Manipulació detectada\"\n}\n```",
+      "parentId": "fld_audit"
+    },
+    {
+      "_id": "fld_health",
+      "_type": "request_group",
+      "name": "🏥 Health & Info",
+      "description": "Endpoints de salut i informació del sistema",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -4,
+      "parentId": "wrk_minerva"
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "name": "💚 Health Check",
+      "url": "{{ _.base_url }}/health",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1,
+      "description": "**Health check** del sistema\n\nNo requereix autenticació",
+      "parentId": "fld_health"
+    },
+    {
+      "_id": "req_health_live",
+      "_type": "request",
+      "name": "🟢 Liveness",
+      "url": "{{ _.base_url }}/health/live",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -2,
+      "description": "**Liveness probe** - L'aplicació està executant-se?",
+      "parentId": "fld_health"
+    },
+    {
+      "_id": "req_health_ready",
+      "_type": "request",
+      "name": "🔵 Readiness",
+      "url": "{{ _.base_url }}/health/ready",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -3,
+      "description": "**Readiness probe** - L'aplicació està preparada per rebre tràfic?",
+      "parentId": "fld_health"
+    }
+  ]
+}
