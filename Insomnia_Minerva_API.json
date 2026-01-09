@@ -44,6 +44,77 @@
       "parentId": null
     },
     {
+      "_id": "fld_setup",
+      "_type": "request_group",
+      "name": "⚙️ Initial Setup",
+      "description": "Configuració inicial del sistema - Crear el primer administrador",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": -0,
+      "parentId": "wrk_minerva"
+    },
+    {
+      "_id": "req_needs_setup",
+      "_type": "request",
+      "name": "1️⃣ Check if Setup Needed",
+      "url": "{{ _.base_url }}/api/setup/needs-setup",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": -1,
+      "isPrivate": false,
+      "description": "**Comprova si el sistema necessita configuració inicial**\n\nNo requereix autenticació\n\n**Resposta si està buit:**\n```json\n{\n  \"needsSetup\": true,\n  \"userCount\": 0\n}\n```\n\n**Si ja hi ha usuaris:**\n```json\n{\n  \"needsSetup\": false,\n  \"userCount\": 5\n}\n```",
+      "parentId": "fld_setup"
+    },
+    {
+      "_id": "req_create_first_admin",
+      "_type": "request",
+      "name": "2️⃣ Create First Admin",
+      "url": "{{ _.base_url }}/api/setup/first-admin",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"{{ _.admin_username }}\",\n  \"password\": \"{{ _.admin_password }}\",\n  \"email\": \"admin@minerva.gov\",\n  \"fullName\": \"System Administrator\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -2,
+      "isPrivate": false,
+      "description": "**Crea el primer administrador del sistema**\n\nNo requereix autenticació (NOMÉS funciona si userCount == 0)\n\n**Requisits de contrasenya:**\n- Mínim 12 caràcters\n- Majúscules, minúscules, números, caràcters especials\n\n**Resposta esperada:**\n```json\n{\n  \"success\": true,\n  \"username\": \"admin\",\n  \"userId\": \"507f...\",\n  \"totpQrCode\": \"data:image/png;base64,...\",\n  \"message\": \"Administrador creat correctament! ...\"\n}\n```\n\n**IMPORTANT:** \n1. Copia el valor de `totpQrCode`\n2. Obre-lo en un navegador per veure el QR\n3. Escaneja amb Google Authenticator\n4. Guarda `userId` a les variables d'entorn\n5. Continua amb el següent pas",
+      "parentId": "fld_setup"
+    },
+    {
+      "_id": "req_enable_first_admin_2fa",
+      "_type": "request",
+      "name": "3️⃣ Enable 2FA for First Admin",
+      "url": "{{ _.base_url }}/api/setup/enable-first-admin-2fa",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"username\": \"{{ _.admin_username }}\",\n  \"totpCode\": \"123456\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -3,
+      "isPrivate": false,
+      "description": "**Activa el 2FA per al primer admin**\n\nNo requereix autenticació (NOMÉS funciona si userCount == 1)\n\n**IMPORTANT:** Substitueix `123456` pel codi TOTP actual de Google Authenticator (canvia cada 30 segons)\n\n**Resposta esperada:**\n```json\n{\n  \"success\": true,\n  \"message\": \"2FA activat correctament! Ara pots fer login...\"\n}\n```\n\n**Següent pas:** Ara pots fer login normal amb:\n1. POST /api/auth/login (credencials)\n2. POST /api/auth/verify-2fa (codi TOTP)",
+      "parentId": "fld_setup"
+    },
+    {
       "_id": "fld_auth",
       "_type": "request_group",
       "name": "🔐 Authentication",
