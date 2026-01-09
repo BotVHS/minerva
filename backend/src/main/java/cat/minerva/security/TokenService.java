@@ -104,7 +104,6 @@ public class TokenService {
      * @param ipAddress IP del client
      * @return token en text pla (només es mostra una vegada)
      */
-    @Transactional
     public String generateRefreshToken(User user, String deviceFingerprint, String ipAddress) {
         // Generar token aleatori (256 bits)
         byte[] tokenBytes = new byte[32];
@@ -152,7 +151,6 @@ public class TokenService {
      * @param ipAddress IP del client
      * @return nou parell de tokens, o null si no és vàlid
      */
-    @Transactional
     public TokenPair refreshTokens(String token, String deviceFingerprint, String ipAddress) {
         String tokenHash = hashToken(token);
 
@@ -229,7 +227,6 @@ public class TokenService {
      * @param reason raó de la revocació
      * @return true si s'ha revocat, false si no existeix
      */
-    @Transactional
     public boolean revokeRefreshToken(String token, String reason) {
         String tokenHash = hashToken(token);
 
@@ -254,7 +251,6 @@ public class TokenService {
      * @param reason raó de la revocació
      * @return nombre de tokens revocats
      */
-    @Transactional
     public long revokeAllUserTokens(User user, String reason) {
         long count = refreshTokenRepository.revokeAllForUser(user.id, reason);
         LOG.infof("Revoked %d tokens for user: %s", count, user.username);
@@ -294,7 +290,6 @@ public class TokenService {
      *
      * @return nombre de tokens eliminats
      */
-    @Transactional
     public long cleanupExpiredTokens() {
         long deleted = refreshTokenRepository.deleteExpired();
         LOG.infof("Cleaned up %d expired refresh tokens", deleted);

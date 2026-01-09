@@ -41,7 +41,6 @@ public class AuditService {
      * @param ipAddress IP del client
      * @param userAgent User-Agent del client
      */
-    @Transactional
     public void log(AuditAction action, User user, boolean success, String details,
                     String ipAddress, String userAgent) {
         log(action, user, success, details, ipAddress, userAgent, null, null, null);
@@ -60,7 +59,6 @@ public class AuditService {
      * @param targetResourceId ID del recurs afectat
      * @param targetResourceType tipus del recurs afectat
      */
-    @Transactional
     public void log(AuditAction action, User user, boolean success, String details,
                     String ipAddress, String userAgent, String errorMessage,
                     ObjectId targetResourceId, String targetResourceType) {
