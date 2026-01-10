@@ -183,7 +183,7 @@ class PasswordHashServiceTest {
     @DisplayName("Should handle null password gracefully")
     void testNullPassword() {
         // When & Then
-        assertThrows(NullPointerException.class,
+        assertThrows(IllegalArgumentException.class,
             () -> passwordHashService.hashPassword(null),
             "Should throw exception for null password");
     }
@@ -242,7 +242,7 @@ class PasswordHashServiceTest {
         String[] specialChars = {"!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "-", "_", "=", "+", "[", "]", "{", "}", ";", ":", "'", "\"", ",", ".", "<", ">", "/", "?"};
 
         for (String specialChar : specialChars) {
-            String password = "ValidP@ss123" + specialChar;
+            String password = "SecureT3st2026P@ssw0rd" + specialChar;
 
             // When
             String validationError = passwordHashService.validatePassword(password);
