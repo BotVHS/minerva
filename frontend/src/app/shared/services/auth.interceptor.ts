@@ -25,22 +25,27 @@ export class AuthInterceptor implements HttpInterceptor {
     // Skip adding token to auth endpoints
     const isAuthEndpoint = request.url.includes('/auth/login') ||
                           request.url.includes('/auth/verify-2fa') ||
+                          request.url.includes('/auth/logout') ||
                           request.url.includes('/auth/refresh');
 
     // Add access token to request if available and not an auth endpoint
     const accessToken = this.authService.getAccessToken();
 
+    console.log('[Interceptor] Request:', request.url, 'isAuthEndpoint:', isAuthEndpoint, 'hasToken:', !!accessToken);
+
     if (accessToken && !isAuthEndpoint) {
       request = this.addToken(request, accessToken);
+      console.log('[Interceptor] Token added to request');
+    } else if (!accessToken && !isAuthEndpoint) {
+      console.warn('[Interceptor] No token available for non-auth endpoint:', request.url);
     }
 
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
-        // Only try to refresh if it's a 401 and not a login/verify-2fa request
-        if (error.status === 401 &&
-            !request.url.includes('/auth/login') &&
-            !request.url.includes('/auth/verify-2fa') &&
-            !request.url.includes('/auth/refresh')) {
+        console.log('[Interceptor] Error:', error.status, 'for', request.url);
+        // Only try to refresh if it's a 401 and not an auth request
+        if (error.status === 401 && !isAuthEndpoint) {
+          console.log('[Interceptor] Attempting token refresh...');
           return this.handle401Error(request, next);
         }
 
@@ -66,13 +71,15 @@ export class AuthInterceptor implements HttpInterceptor {
         switchMap(response => {
           this.isRefreshing = false;
           this.refreshTokenSubject.next(response.accessToken);
+          // Retry the original request with the new token
           return next.handle(this.addToken(request, response.accessToken));
         }),
         catchError(error => {
           this.isRefreshing = false;
           this.refreshTokenSubject.next(null);
-          // Refresh failed, logout and redirect to login
-          this.authService.logout().subscribe();
+          // Refresh failed, clear tokens and redirect to login
+          // Don't call logout() endpoint as it will also trigger 401
+          this.authService.clearTokensAndRedirect();
           this.router.navigate(['/login']);
           return throwError(() => error);
         })

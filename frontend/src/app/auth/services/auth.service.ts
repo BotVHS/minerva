@@ -132,6 +132,14 @@ export class AuthService {
   }
 
   /**
+   * Clear tokens and user session (public method for interceptor)
+   */
+  clearTokensAndRedirect(): void {
+    this.clearTokens();
+    this.currentUserSubject.next(null);
+  }
+
+  /**
    * Load user from token (decode JWT)
    */
   private loadUserFromToken(): void {
