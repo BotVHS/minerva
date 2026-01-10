@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Pre-commit hook per executar tests abans de cada commit
+# Per activar-lo:
+#   chmod +x .git-hooks/pre-commit
+#   git config core.hooksPath .git-hooks
+
+echo "🧪 Executant tests abans de commit..."
+
+cd backend
+
+# Executar tests unitaris
+echo "▶ Tests unitaris..."
+./mvnw test -Dtest="*Test" -q
+
+if [ $? -ne 0 ]; then
+    echo "❌ Tests unitaris fallits! Commit cancel·lat."
+    echo "💡 Solucions:"
+    echo "   - Revisa els errors i arregla'ls"
+    echo "   - O executa: git commit --no-verify (NO recomanat)"
+    exit 1
+fi
+
+# Executar tests de seguretat
+echo "▶ Tests de seguretat..."
+./mvnw test -Dtest=SecurityTest -q
+
+if [ $? -ne 0 ]; then
+    echo "❌ Tests de seguretat fallits! Commit cancel·lat."
+    echo "⚠️  CRÍTICA DE SEGURETAT - Arregla immediatament!"
+    exit 1
+fi
+
+# Verificar code coverage
+echo "▶ Verificant code coverage (mínim 70%)..."
+./mvnw jacoco:check -q
+
+if [ $? -ne 0 ]; then
+    echo "⚠️  Code coverage inferior al 70%!"
+    echo "💡 Executa: mvn jacoco:report i revisa target/site/jacoco/index.html"
+    echo "   Pots fer commit igualment, però afegeix més tests aviat."
+    # No bloquejar commit per coverage baix (només warning)
+fi
+
+echo "✅ Tots els tests passen!"
+echo "📊 Pots revisar coverage a: backend/target/site/jacoco/index.html"
+exit 0

@@ -1,0 +1,106 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-tests.yml'
+
+jobs:
+  test:
+    name: Run Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    - name: Cache Maven packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Run unit tests
+      run: |
+        cd backend
+        mvn clean test -Dtest="*Test" -B
+
+    - name: Run integration tests
+      run: |
+        cd backend
+        mvn test -Dtest="*IT" -B
+      env:
+        QUARKUS_MONGODB_CONNECTION_STRING: mongodb://localhost:27017/minerva-test
+
+    - name: Run security tests
+      run: |
+        cd backend
+        mvn test -Dtest=SecurityTest -B
+
+    - name: Generate coverage report
+      run: |
+        cd backend
+        mvn jacoco:report
+
+    - name: Check coverage threshold
+      run: |
+        cd backend
+        mvn jacoco:check
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./backend/target/site/jacoco/jacoco.xml
+        flags: backend
+        name: backend-coverage
+        fail_ci_if_error: false
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: backend/target/surefire-reports/
+
+    - name: Upload coverage report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: backend/target/site/jacoco/
+
+    - name: Comment PR with coverage
+      if: github.event_name == 'pull_request'
+      uses: madrapps/jacoco-report@v1.6.1
+      with:
+        paths: backend/target/site/jacoco/jacoco.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+        min-coverage-overall: 70
+        min-coverage-changed-files: 80
+        title: Backend Code Coverage Report
