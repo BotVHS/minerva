@@ -64,10 +64,10 @@ export class DashboardComponent implements OnInit {
 
     // Load recent audit logs
     if (this.authService.hasRole('ADMIN') || this.authService.hasRole('SUPERVISOR')) {
-      this.auditService.getAuditLogs().subscribe({
-        next: (logs) => {
-          this.stats.recentAuditLogs = logs.slice(0, 10);
-          this.stats.recentLogins = logs.filter(log =>
+      this.auditService.getAuditLogs({ limit: 100 }).subscribe({
+        next: (response) => {
+          this.stats.recentAuditLogs = response.logs.slice(0, 10);
+          this.stats.recentLogins = response.logs.filter(log =>
             log.action === 'LOGIN_SUCCESS' &&
             this.isRecent(log.timestamp)
           ).length;

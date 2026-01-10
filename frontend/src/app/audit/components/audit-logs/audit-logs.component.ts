@@ -37,8 +37,8 @@ export class AuditLogsComponent implements OnInit {
     this.error = '';
 
     this.auditService.getAuditLogs().subscribe({
-      next: (logs) => {
-        this.logs = logs;
+      next: (response) => {
+        this.logs = response.logs;
         this.applyFilters();
         this.loading = false;
       },
