@@ -48,6 +48,7 @@ export interface CreateUserRequest {
   username: string;
   email: string;
   fullName: string;
+  password: string;
   roles: UserRole[];
 }
 
@@ -59,6 +60,7 @@ export interface CreateUserResponse {
 export interface UpdateUserRequest {
   email?: string;
   fullName?: string;
+  password?: string;
   roles?: UserRole[];
   active?: boolean;
 }

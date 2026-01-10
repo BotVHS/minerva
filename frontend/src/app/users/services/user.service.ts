@@ -50,4 +50,11 @@ export class UserService {
   deactivateUser(id: string): Observable<void> {
     return this.http.delete<void>(`${this.API_URL}/${id}`);
   }
+
+  /**
+   * Delete user (alias for deactivateUser)
+   */
+  deleteUser(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.API_URL}/${id}`);
+  }
 }

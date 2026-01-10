@@ -96,7 +96,7 @@ export class UsersListComponent implements OnInit {
       next: () => {
         this.loadUsers();
       },
-      error: (err) => {
+      error: (err: any) => {
         alert('Error eliminant usuari: ' + (err.error?.error || err.message));
       }
     });

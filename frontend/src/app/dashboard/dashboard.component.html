@@ -3,7 +3,7 @@
 
   <div class="welcome-message" *ngIf="currentUser">
     <h2>Benvingut/da, {{ currentUser.fullName }}!</h2>
-    <p>Últim accés: {{ formatDate(currentUser.lastLoginAt || new Date().toISOString()) }}</p>
+    <p>Últim accés: {{ formatDate(currentUser.lastLoginAt || getCurrentDateISO()) }}</p>
   </div>
 
   <!-- Loading state -->

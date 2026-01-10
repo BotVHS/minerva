@@ -143,4 +143,8 @@ export class DashboardComponent implements OnInit {
   hasRole(role: string): boolean {
     return this.authService.hasRole(role);
   }
+
+  getCurrentDateISO(): string {
+    return new Date().toISOString();
+  }
 }

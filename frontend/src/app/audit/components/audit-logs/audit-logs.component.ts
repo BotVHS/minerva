@@ -23,6 +23,9 @@ export class AuditLogsComponent implements OnInit {
 
   availableActions = Object.values(AuditAction);
 
+  // Expose Math to template
+  Math = Math;
+
   constructor(private auditService: AuditService) {}
 
   ngOnInit(): void {
