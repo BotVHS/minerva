@@ -79,7 +79,7 @@ public class TokenService {
         Set<String> roles = new HashSet<>();
         user.roles.forEach(role -> roles.add(role.name()));
 
-        String token = Jwt.issuer("https://minerva.gov")
+        String token = Jwt.issuer("https://min3rva.cat")
             .upn(user.username)
             .subject(user.id.toString())
             .groups(roles)

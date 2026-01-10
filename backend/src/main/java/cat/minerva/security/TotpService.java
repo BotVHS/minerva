@@ -55,7 +55,7 @@ public class TotpService {
 
     private static final Logger LOG = Logger.getLogger(TotpService.class);
 
-    @ConfigProperty(name = "minerva.security.totp.issuer", defaultValue = "Minerva Gov")
+    @ConfigProperty(name = "minerva.security.totp.issuer", defaultValue = "Minerva")
     String issuer;
 
     private final SecretGenerator secretGenerator = new DefaultSecretGenerator();

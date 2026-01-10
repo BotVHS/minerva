@@ -167,7 +167,7 @@ El model `User` ja té el camp `u2fPublicKey` preparat per suportar:
 **Claims**:
 ```json
 {
-  "iss": "https://minerva.gov",
+  "iss": "https://min3rva.cat",
   "sub": "userId",
   "upn": "username",
   "groups": ["ADMIN", "ANALISTA"],
@@ -484,7 +484,7 @@ chmod 644 /keys/public-key.pem
 ```bash
 export MONGODB_USER=minerva_app
 export MONGODB_PASSWORD=$(openssl rand -base64 32)
-export JWT_ISSUER=https://minerva.gov.real.domain
+export JWT_ISSUER=https://min3rva.cat
 ```
 
 #### 3. HTTPS Obligatori

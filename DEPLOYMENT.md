@@ -38,7 +38,7 @@
 
 ```bash
 # 1. Clonar repositori
-git clone https://github.com/yourgov/minerva.git
+git clone https://github.com/botvhs/minerva.git
 cd minerva
 
 # 2. Copiar variables d'entorn
@@ -251,14 +251,14 @@ Contingut:
 # Redirect HTTP → HTTPS
 server {
     listen 80;
-    server_name minerva.yourdomain.gov;
+    server_name minerva;
     return 301 https://$server_name$request_uri;
 }
 
 # HTTPS
 server {
     listen 443 ssl http2;
-    server_name minerva.yourdomain.gov;
+    server_name minerva;
 
     # SSL Configuration
     ssl_certificate /etc/ssl/certs/minerva.crt;
@@ -347,7 +347,7 @@ Afegir:
 ```bash
 MONGODB_USER=minerva_app
 MONGODB_PASSWORD=<password_fort>
-JWT_ISSUER=https://minerva.yourdomain.gov
+JWT_ISSUER=https://min3rva.cat
 QUARKUS_PROFILE=prod
 ```
 
@@ -450,7 +450,7 @@ sudo tail -f /var/log/mongodb/mongod.log
 
 ```bash
 # Backend health
-curl https://minerva.yourdomain.gov/api/health
+curl https://min3rva.cat/api/health
 
 # MongoDB status
 mongosh minerva_db -u minerva_app -p --eval "db.serverStatus()"

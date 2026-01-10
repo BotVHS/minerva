@@ -24,7 +24,7 @@ import java.time.Instant;
  * - Context: detalls addicionals rellevants
  *
  * Aquest sistema permet auditories completes i detecció de manipulacions,
- * complint amb els requisits de seguretat governamental.
+ * complint amb els requisits de seguretat.
  */
 @MongoEntity(collection = "audit_logs")
 public class AuditLog extends PanacheMongoEntity {

@@ -143,7 +143,7 @@ Ja està configurat! Tots els endpoints usen `{{ _.base_url }}`.
 
 Si canvies de servidor (ex: producció), només canvia `base_url` a:
 ```
-https://minerva.tudomini.gov
+https://min3rva.cat
 ```
 
 ### Veure Descripció dels Endpoints

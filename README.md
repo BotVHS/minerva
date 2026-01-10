@@ -1,6 +1,6 @@
 # Minerva Security System
 
-Sistema complet d'autenticació i autorització ultrasegur pensat per entorns governamentals d'intel·ligència amb múltiples nivells d'autorització.
+Sistema complet d'autenticació i autorització ultrasegur pensat per entorns d'intel·ligència amb múltiples nivells d'autorització.
 
 ## 🔒 Característiques Principals
 
@@ -99,7 +99,7 @@ docker --version
 
 ```bash
 # Clonar repositori
-git clone https://github.com/yourgov/minerva.git
+git clone https://github.com/botvhs/minerva.git
 cd minerva
 
 # Copiar variables d'entorn
@@ -368,7 +368,7 @@ Aquest és un projecte de seguretat crítica. Totes les contribucions han de:
 
 ## 📄 Llicència
 
-[Definir llicència segons política governamental]
+[Definir llicència segons política]
 
 ## ⚠️ Advertències de Seguretat
 
@@ -386,4 +386,4 @@ Per qüestions de seguretat o incidents, contacta:
 
 ---
 
-**Minerva Security System** - Seguretat de nivell governamental per a entorns d'intel·ligència crítics.
+**Minerva Security System** - Seguretat per a entorns d'intel·ligència crítics.

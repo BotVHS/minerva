@@ -9,7 +9,7 @@ import { User } from './shared/models/user.model';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  title = 'Minerva - Sistema Governamental Segur';
+  title = 'Minerva - Sistema Segur';
   currentUser: User | null = null;
   isSidebarOpen = true;
 
