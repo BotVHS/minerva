@@ -38,7 +38,16 @@ export class AuthService {
     return this.http.post<LoginSuccessResponse>(`${this.API_URL}/verify-2fa`, request)
       .pipe(
         tap(response => {
+          console.log('[AuthService] verify2FA response:', {
+            hasAccessToken: !!response.accessToken,
+            hasRefreshToken: !!response.refreshToken,
+            hasUser: !!response.user,
+            accessTokenPreview: response.accessToken?.substring(0, 50)
+          });
           this.storeTokens(response.accessToken, response.refreshToken);
+          console.log('[AuthService] Tokens stored. Retrieving to verify:', {
+            storedAccessToken: this.getAccessToken()?.substring(0, 50)
+          });
           this.currentUserSubject.next(response.user);
         })
       );

@@ -32,10 +32,13 @@ export class AuthInterceptor implements HttpInterceptor {
     const accessToken = this.authService.getAccessToken();
 
     console.log('[Interceptor] Request:', request.url, 'isAuthEndpoint:', isAuthEndpoint, 'hasToken:', !!accessToken);
+    if (accessToken) {
+      console.log('[Interceptor] Token preview:', accessToken.substring(0, 50) + '...');
+    }
 
     if (accessToken && !isAuthEndpoint) {
       request = this.addToken(request, accessToken);
-      console.log('[Interceptor] Token added to request');
+      console.log('[Interceptor] Token added to request, Authorization header:', request.headers.get('Authorization')?.substring(0, 60));
     } else if (!accessToken && !isAuthEndpoint) {
       console.warn('[Interceptor] No token available for non-auth endpoint:', request.url);
     }
