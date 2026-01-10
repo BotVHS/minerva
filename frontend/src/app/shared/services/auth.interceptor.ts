@@ -31,24 +31,14 @@ export class AuthInterceptor implements HttpInterceptor {
     // Add access token to request if available and not an auth endpoint
     const accessToken = this.authService.getAccessToken();
 
-    console.log('[Interceptor] Request:', request.url, 'isAuthEndpoint:', isAuthEndpoint, 'hasToken:', !!accessToken);
-    if (accessToken) {
-      console.log('[Interceptor] Token preview:', accessToken.substring(0, 50) + '...');
-    }
-
     if (accessToken && !isAuthEndpoint) {
       request = this.addToken(request, accessToken);
-      console.log('[Interceptor] Token added to request, Authorization header:', request.headers.get('Authorization')?.substring(0, 60));
-    } else if (!accessToken && !isAuthEndpoint) {
-      console.warn('[Interceptor] No token available for non-auth endpoint:', request.url);
     }
 
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
-        console.log('[Interceptor] Error:', error.status, 'for', request.url);
         // Only try to refresh if it's a 401 and not an auth request
         if (error.status === 401 && !isAuthEndpoint) {
-          console.log('[Interceptor] Attempting token refresh...');
           return this.handle401Error(request, next);
         }
 
