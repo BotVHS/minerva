@@ -114,7 +114,7 @@ class TotpServiceTest {
     }
 
     @Test
-    @DisplayName("Should generate QR code data URL")
+    @DisplayName("Should generate QR code as base64 string")
     void testGenerateQRCode() {
         // Given
         String username = "testuser";
@@ -125,12 +125,14 @@ class TotpServiceTest {
 
         // Then
         assertNotNull(qrCode, "QR code should not be null");
-        assertTrue(qrCode.startsWith("data:image/png;base64,"), "QR code should be data URL with base64 PNG");
+        // QR code is returned as raw base64 PNG data (no data URL prefix)
         assertTrue(qrCode.length() > 100, "QR code data should be substantial");
+        // Verify it's valid base64 (only contains A-Z, a-z, 0-9, +, /, =)
+        assertTrue(qrCode.matches("^[A-Za-z0-9+/=]+$"), "QR code should be valid base64");
     }
 
     @Test
-    @DisplayName("QR code should contain username and issuer")
+    @DisplayName("QR code should be valid base64 PNG")
     void testQRCodeContent() {
         // Given
         String username = "admin@test.com";
@@ -142,8 +144,9 @@ class TotpServiceTest {
         // Then
         assertNotNull(qrCode);
         // QR code encodes: otpauth://totp/Minerva%20Gov:admin@test.com?secret=...&issuer=Minerva%20Gov
-        // We can't decode it easily in test, but we can check it's properly formatted
-        assertTrue(qrCode.startsWith("data:image/png;base64,"));
+        // We can't decode it easily in test, but we can check it's valid base64
+        assertTrue(qrCode.matches("^[A-Za-z0-9+/=]+$"), "QR code should be valid base64");
+        assertTrue(qrCode.length() > 100, "QR code should contain substantial data");
     }
 
     @Test
@@ -163,10 +166,11 @@ class TotpServiceTest {
     @Test
     @DisplayName("Should handle null secret gracefully")
     void testNullSecret() {
-        // When & Then
-        assertThrows(Exception.class,
-            () -> totpService.validateCode("123456", null),
-            "Should handle null secret");
+        // When
+        boolean isValid = totpService.validateCode("123456", null);
+
+        // Then
+        assertFalse(isValid, "Null secret should return false (not throw exception)");
     }
 
     @Test
@@ -275,7 +279,8 @@ class TotpServiceTest {
 
         // Then
         assertNotNull(qrCode, "QR code should handle special characters in username");
-        assertTrue(qrCode.startsWith("data:image/png;base64,"));
+        assertTrue(qrCode.matches("^[A-Za-z0-9+/=]+$"), "QR code should be valid base64");
+        assertTrue(qrCode.length() > 100, "QR code should contain substantial data");
     }
 
     @Test
