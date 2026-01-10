@@ -6,14 +6,15 @@ import {
   HttpInterceptor,
   HttpErrorResponse
 } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { Observable, throwError, BehaviorSubject } from 'rxjs';
+import { catchError, switchMap, filter, take } from 'rxjs/operators';
 import { AuthService } from '../../auth/services/auth.service';
 import { Router } from '@angular/router';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   private isRefreshing = false;
+  private refreshTokenSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
   constructor(
     private authService: AuthService,
@@ -21,17 +22,25 @@ export class AuthInterceptor implements HttpInterceptor {
   ) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Add access token to request if available
+    // Skip adding token to auth endpoints
+    const isAuthEndpoint = request.url.includes('/auth/login') ||
+                          request.url.includes('/auth/verify-2fa') ||
+                          request.url.includes('/auth/refresh');
+
+    // Add access token to request if available and not an auth endpoint
     const accessToken = this.authService.getAccessToken();
 
-    if (accessToken && !request.url.includes('/auth/refresh')) {
+    if (accessToken && !isAuthEndpoint) {
       request = this.addToken(request, accessToken);
     }
 
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
-        if (error.status === 401 && !request.url.includes('/auth/login')) {
-          // Token expired, try to refresh
+        // Only try to refresh if it's a 401 and not a login/verify-2fa request
+        if (error.status === 401 &&
+            !request.url.includes('/auth/login') &&
+            !request.url.includes('/auth/verify-2fa') &&
+            !request.url.includes('/auth/refresh')) {
           return this.handle401Error(request, next);
         }
 
@@ -51,22 +60,32 @@ export class AuthInterceptor implements HttpInterceptor {
   private handle401Error(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     if (!this.isRefreshing) {
       this.isRefreshing = true;
+      this.refreshTokenSubject.next(null);
 
       return this.authService.refreshToken().pipe(
         switchMap(response => {
           this.isRefreshing = false;
+          this.refreshTokenSubject.next(response.accessToken);
           return next.handle(this.addToken(request, response.accessToken));
         }),
         catchError(error => {
           this.isRefreshing = false;
+          this.refreshTokenSubject.next(null);
           // Refresh failed, logout and redirect to login
           this.authService.logout().subscribe();
           this.router.navigate(['/login']);
           return throwError(() => error);
         })
       );
+    } else {
+      // Wait for token refresh to complete
+      return this.refreshTokenSubject.pipe(
+        filter(token => token !== null),
+        take(1),
+        switchMap(token => {
+          return next.handle(this.addToken(request, token!));
+        })
+      );
     }
-
-    return next.handle(request);
   }
 }
