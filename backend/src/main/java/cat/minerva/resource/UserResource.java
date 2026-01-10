@@ -1,6 +1,7 @@
 package cat.minerva.resource;
 
 import cat.minerva.dto.request.CreateUserRequest;
+import cat.minerva.dto.request.UpdateUserRequest;
 import cat.minerva.dto.response.UserDTO;
 import cat.minerva.model.User;
 import cat.minerva.model.UserRole;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
  * - POST /api/users - Crear usuari
  * - GET /api/users - Llistar usuaris
  * - GET /api/users/{id} - Obtenir usuari
+ * - PUT /api/users/{id} - Actualitzar usuari
  * - POST /api/users/{id}/roles - Assignar rol
  * - DELETE /api/users/{id}/roles/{role} - Eliminar rol
  * - POST /api/users/{id}/enable - Activar usuari
@@ -128,6 +130,74 @@ public class UserResource {
         return userService.findById(id)
             .map(UserDTO::from)
             .orElseThrow(() -> new NotFoundException("User not found"));
+    }
+
+    /**
+     * Actualitzar usuari (només ADMIN).
+     *
+     * PUT /api/users/{id}
+     * Body: {
+     *   "email": "nou.email@gov.cat",
+     *   "fullName": "Nom Actualitzat",
+     *   "roles": ["ANALISTA", "SUPERVISOR"],
+     *   "active": true
+     * }
+     */
+    @PUT
+    @Path("/{id}")
+    @RolesAllowed("ADMIN")
+    public UserDTO updateUser(
+        @PathParam("id") String id,
+        @Valid UpdateUserRequest request,
+        @Context SecurityContext securityContext
+    ) {
+        User admin = getCurrentUser(securityContext);
+        String ipAddress = getClientIp();
+        String userAgent = getUserAgent();
+
+        User targetUser = userService.findById(id)
+            .orElseThrow(() -> new NotFoundException("User not found"));
+
+        LOG.infof("Updating user: %s by admin: %s", targetUser.username, admin.username);
+
+        // Update basic fields
+        if (request.email != null && !request.email.equals(targetUser.email)) {
+            targetUser.email = request.email;
+        }
+        if (request.fullName != null && !request.fullName.equals(targetUser.fullName)) {
+            targetUser.fullName = request.fullName;
+        }
+
+        // Update active status if changed
+        if (request.active != null && request.active != targetUser.active) {
+            if (request.active) {
+                userService.enableUser(admin, targetUser, ipAddress, userAgent);
+            } else {
+                userService.disableUser(admin, targetUser, ipAddress, userAgent);
+            }
+        }
+
+        // Update roles if changed
+        if (request.roles != null) {
+            // Remove roles that are not in the new list
+            for (UserRole currentRole : targetUser.roles) {
+                if (!request.roles.contains(currentRole)) {
+                    userService.removeRole(admin, targetUser, currentRole, ipAddress, userAgent);
+                }
+            }
+
+            // Add roles that are in the new list but not current
+            for (UserRole newRole : request.roles) {
+                if (!targetUser.roles.contains(newRole)) {
+                    userService.assignRole(admin, targetUser, newRole, ipAddress, userAgent);
+                }
+            }
+        }
+
+        // Save changes
+        targetUser.update();
+
+        return UserDTO.from(targetUser);
     }
 
     /**
