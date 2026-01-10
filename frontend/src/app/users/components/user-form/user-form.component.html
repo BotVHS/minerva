@@ -1,0 +1,144 @@
+<div class="user-form-container">
+  <div class="page-header">
+    <h1 class="page-title">{{ isEditMode ? 'Editar Usuari' : 'Nou Usuari' }}</h1>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-spinner" *ngIf="loading && isEditMode">
+    <div class="spinner"></div>
+    <p>Carregant usuari...</p>
+  </div>
+
+  <!-- Error state -->
+  <div class="alert alert-danger" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <!-- Form -->
+  <div class="form-card" *ngIf="!loading || !isEditMode">
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+      <!-- Username -->
+      <div class="form-group">
+        <label for="username">Nom d'usuari *</label>
+        <input
+          type="text"
+          id="username"
+          formControlName="username"
+          class="form-control"
+          [class.invalid]="isFieldInvalid('username')"
+          [disabled]="isEditMode"
+        />
+        <div class="error-message" *ngIf="isFieldInvalid('username')">
+          {{ getFieldError('username') }}
+        </div>
+        <small *ngIf="isEditMode" class="form-text">El nom d'usuari no es pot modificar</small>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email *</label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          class="form-control"
+          [class.invalid]="isFieldInvalid('email')"
+        />
+        <div class="error-message" *ngIf="isFieldInvalid('email')">
+          {{ getFieldError('email') }}
+        </div>
+      </div>
+
+      <!-- Full Name -->
+      <div class="form-group">
+        <label for="fullName">Nom Complet *</label>
+        <input
+          type="text"
+          id="fullName"
+          formControlName="fullName"
+          class="form-control"
+          [class.invalid]="isFieldInvalid('fullName')"
+        />
+        <div class="error-message" *ngIf="isFieldInvalid('fullName')">
+          {{ getFieldError('fullName') }}
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label for="password">
+          Contrasenya {{ isEditMode ? '(deixar en blanc per no canviar)' : '*' }}
+        </label>
+        <input
+          type="password"
+          id="password"
+          formControlName="password"
+          class="form-control"
+          [class.invalid]="isFieldInvalid('password')"
+        />
+        <div class="error-message" *ngIf="isFieldInvalid('password')">
+          {{ getFieldError('password') }}
+        </div>
+        <small class="form-text">Mínim 8 caràcters</small>
+      </div>
+
+      <!-- Roles -->
+      <div class="form-group">
+        <label>Rols *</label>
+        <div class="roles-grid">
+          <div
+            *ngFor="let role of availableRoles"
+            class="role-checkbox"
+            [class.selected]="isRoleSelected(role)"
+            (click)="toggleRole(role)"
+          >
+            <input
+              type="checkbox"
+              [checked]="isRoleSelected(role)"
+              [id]="'role-' + role"
+            />
+            <label [for]="'role-' + role">{{ role }}</label>
+          </div>
+        </div>
+        <div class="error-message" *ngIf="isFieldInvalid('roles')">
+          Selecciona almenys un rol
+        </div>
+      </div>
+
+      <!-- Active -->
+      <div class="form-group checkbox-group" *ngIf="isEditMode">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            formControlName="active"
+          />
+          <span>Usuari actiu</span>
+        </label>
+        <small class="form-text">Els usuaris inactius no poden iniciar sessió</small>
+      </div>
+
+      <!-- 2FA -->
+      <div class="form-group checkbox-group" *ngIf="isEditMode">
+        <label class="checkbox-label">
+          <input
+            type="checkbox"
+            formControlName="twoFactorEnabled"
+            disabled
+          />
+          <span>Autenticació de dos factors (2FA)</span>
+        </label>
+        <small class="form-text">Els usuaris gestionen el seu propi 2FA des del seu perfil</small>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading">
+          Cancel·lar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="loading || userForm.invalid">
+          {{ loading ? 'Guardant...' : (isEditMode ? 'Actualitzar' : 'Crear') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

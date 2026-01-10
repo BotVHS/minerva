@@ -1,0 +1,47 @@
+<div class="app-container" *ngIf="!isLoginPage()">
+  <!-- Header -->
+  <header class="app-header">
+    <button class="sidebar-toggle" (click)="toggleSidebar()" *ngIf="isAuthenticated()">
+      <span class="icon">☰</span>
+    </button>
+    <h1 class="app-title">{{ title }}</h1>
+    <div class="user-info" *ngIf="currentUser">
+      <div class="user-avatar">{{ getUserInitials() }}</div>
+      <div class="user-details">
+        <span class="user-name">{{ currentUser.fullName }}</span>
+        <span class="user-role">{{ currentUser.roles[0] }}</span>
+      </div>
+      <button class="logout-btn" (click)="logout()">Tancar Sessió</button>
+    </div>
+  </header>
+
+  <div class="app-content">
+    <!-- Sidebar -->
+    <aside class="app-sidebar" [class.open]="isSidebarOpen" *ngIf="isAuthenticated()">
+      <nav class="sidebar-nav">
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+          <span class="icon">📊</span>
+          <span class="text">Dashboard</span>
+        </a>
+        <a routerLink="/users" routerLinkActive="active" class="nav-item" *ngIf="hasRole('ADMIN')">
+          <span class="icon">👥</span>
+          <span class="text">Usuaris</span>
+        </a>
+        <a routerLink="/audit" routerLinkActive="active" class="nav-item" *ngIf="hasRole('ADMIN') || hasRole('SUPERVISOR')">
+          <span class="icon">📋</span>
+          <span class="text">Auditoria</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="app-main" [class.sidebar-open]="isSidebarOpen && isAuthenticated()">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
+
+<!-- Login page (no layout) -->
+<div *ngIf="isLoginPage()">
+  <router-outlet></router-outlet>
+</div>

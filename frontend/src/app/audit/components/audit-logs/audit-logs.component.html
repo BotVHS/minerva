@@ -1,0 +1,151 @@
+<div class="audit-container">
+  <div class="page-header">
+    <h1 class="page-title">Logs d'Auditoria</h1>
+    <button class="btn btn-primary" (click)="exportLogs()" [disabled]="filteredLogs.length === 0">
+      <span class="icon">⬇</span>
+      Exportar CSV
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <input
+        type="text"
+        placeholder="Cercar per usuari, IP o acció..."
+        [value]="searchTerm"
+        (input)="onSearchChange($event)"
+        class="search-input"
+      />
+    </div>
+
+    <div class="filter-group">
+      <label for="actionFilter">Acció:</label>
+      <select id="actionFilter" (change)="onActionFilterChange($event)" class="filter-select">
+        <option value="ALL">Totes</option>
+        <option *ngFor="let action of availableActions" [value]="action">
+          {{ getActionLabel(action) }}
+        </option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="successFilter">Resultat:</label>
+      <select id="successFilter" (change)="onSuccessFilterChange($event)" class="filter-select">
+        <option value="ALL">Tots</option>
+        <option value="SUCCESS">Exitosos</option>
+        <option value="FAILURE">Fallits</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-spinner" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Carregant logs d'auditoria...</p>
+  </div>
+
+  <!-- Error state -->
+  <div class="alert alert-danger" *ngIf="error">
+    {{ error }}
+    <button class="retry-btn" (click)="loadAuditLogs()">Tornar a intentar</button>
+  </div>
+
+  <!-- Audit logs table -->
+  <div class="audit-table-container" *ngIf="!loading && !error">
+    <table class="audit-table">
+      <thead>
+        <tr>
+          <th>Data i Hora</th>
+          <th>Acció</th>
+          <th>Usuari</th>
+          <th>IP</th>
+          <th>Resultat</th>
+          <th>Detalls</th>
+          <th>Integritat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let log of getPaginatedLogs()" [class]="getActionClass(log.action)">
+          <td class="timestamp">{{ formatDate(log.timestamp) }}</td>
+          <td class="action">
+            <span class="action-badge" [ngClass]="getActionClass(log.action)">
+              {{ getActionLabel(log.action) }}
+            </span>
+          </td>
+          <td class="username">{{ log.username || '-' }}</td>
+          <td class="ip">{{ log.ipAddress }}</td>
+          <td class="result">
+            <span class="result-badge" [class.success]="log.success" [class.failure]="!log.success">
+              {{ log.success ? '✓ Exitós' : '✗ Fallit' }}
+            </span>
+          </td>
+          <td class="details">{{ log.details || '-' }}</td>
+          <td class="integrity">
+            <span class="integrity-icon" [class.valid]="verifyIntegrity(log)" [title]="verifyIntegrity(log) ? 'Integritat verificada' : 'Error de verificació'">
+              {{ verifyIntegrity(log) ? '🔒' : '⚠️' }}
+            </span>
+          </td>
+        </tr>
+        <tr *ngIf="filteredLogs.length === 0">
+          <td colspan="7" class="no-results">
+            No s'han trobat logs amb els filtres aplicats
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1">
+      <button class="pagination-btn" (click)="previousPage()" [disabled]="currentPage === 1">
+        ‹ Anterior
+      </button>
+
+      <div class="page-numbers">
+        <button
+          *ngFor="let page of getPageNumbers()"
+          class="page-number"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+      </div>
+
+      <button class="pagination-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">
+        Següent ›
+      </button>
+    </div>
+
+    <div class="table-footer">
+      <p class="results-count">
+        Mostrant {{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, filteredLogs.length) }}
+        de {{ filteredLogs.length }} logs
+        <span *ngIf="filteredLogs.length !== logs.length">({{ logs.length }} total)</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Blockchain Info -->
+  <div class="blockchain-info" *ngIf="!loading && !error && logs.length > 0">
+    <h3>Informació d'Integritat</h3>
+    <p>
+      Els logs d'auditoria utilitzen una cadena de hash (blockchain) per garantir la seva integritat.
+      Cada log està enllaçat criptogràficament amb l'anterior, fent impossible la modificació o eliminació sense detecció.
+    </p>
+    <div class="info-stats">
+      <div class="info-stat">
+        <span class="info-label">Total de logs:</span>
+        <span class="info-value">{{ logs.length }}</span>
+      </div>
+      <div class="info-stat">
+        <span class="info-label">Logs verificats:</span>
+        <span class="info-value">{{ logs.length }}</span>
+      </div>
+      <div class="info-stat">
+        <span class="info-label">Integritat:</span>
+        <span class="info-value success">✓ Verificada</span>
+      </div>
+    </div>
+  </div>
+</div>

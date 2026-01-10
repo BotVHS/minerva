@@ -1,0 +1,133 @@
+<div class="users-container">
+  <div class="page-header">
+    <h1 class="page-title">Gestió d'Usuaris</h1>
+    <button class="btn btn-primary" (click)="createUser()">
+      <span class="icon">+</span>
+      Nou Usuari
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <input
+        type="text"
+        placeholder="Cercar usuaris..."
+        [value]="searchTerm"
+        (input)="onSearchChange($event)"
+        class="search-input"
+      />
+    </div>
+
+    <div class="filter-group">
+      <label for="roleFilter">Rol:</label>
+      <select id="roleFilter" (change)="onRoleFilterChange($event)" class="filter-select">
+        <option value="ALL">Tots</option>
+        <option value="ADMIN">Admin</option>
+        <option value="SUPERVISOR">Supervisor</option>
+        <option value="ANALISTA">Analista</option>
+        <option value="CONTRIBUIDOR">Contribuïdor</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="statusFilter">Estat:</label>
+      <select id="statusFilter" (change)="onStatusFilterChange($event)" class="filter-select">
+        <option value="ALL">Tots</option>
+        <option value="ACTIVE">Actius</option>
+        <option value="INACTIVE">Inactius</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading-spinner" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Carregant usuaris...</p>
+  </div>
+
+  <!-- Error state -->
+  <div class="alert alert-danger" *ngIf="error">
+    {{ error }}
+    <button class="retry-btn" (click)="loadUsers()">Tornar a intentar</button>
+  </div>
+
+  <!-- Users table -->
+  <div class="users-table-container" *ngIf="!loading && !error">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Usuari</th>
+          <th>Email</th>
+          <th>Nom Complet</th>
+          <th>Rols</th>
+          <th>Estat</th>
+          <th>2FA</th>
+          <th>Últim Accés</th>
+          <th>Accions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of filteredUsers" [class.inactive]="!user.active">
+          <td class="username">{{ user.username }}</td>
+          <td class="email">{{ user.email }}</td>
+          <td>{{ user.fullName }}</td>
+          <td class="roles">
+            <span
+              *ngFor="let role of user.roles"
+              class="badge"
+              [ngClass]="getRoleBadgeClass(role)"
+            >
+              {{ role }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [class.active]="user.active" [class.inactive]="!user.active">
+              {{ user.active ? 'Actiu' : 'Inactiu' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <span class="two-fa-icon" [class.enabled]="user.twoFactorEnabled">
+              {{ user.twoFactorEnabled ? '✓' : '✗' }}
+            </span>
+          </td>
+          <td class="last-login">{{ formatDate(user.lastLoginAt) }}</td>
+          <td class="actions">
+            <button
+              class="btn btn-sm btn-info"
+              (click)="editUser(user)"
+              title="Editar"
+            >
+              ✎
+            </button>
+            <button
+              class="btn btn-sm btn-warning"
+              (click)="toggleUserStatus(user)"
+              [title]="user.active ? 'Desactivar' : 'Activar'"
+            >
+              {{ user.active ? '⏸' : '▶' }}
+            </button>
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="deleteUser(user)"
+              title="Eliminar"
+            >
+              🗑
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="filteredUsers.length === 0">
+          <td colspan="8" class="no-results">
+            No s'han trobat usuaris amb els filtres aplicats
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="table-footer">
+      <p class="results-count">
+        Mostrant {{ filteredUsers.length }} de {{ users.length }} usuaris
+      </p>
+    </div>
+  </div>
+</div>

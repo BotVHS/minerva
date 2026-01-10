@@ -1,0 +1,104 @@
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>Minerva Security System</h1>
+      <p class="subtitle">Sistema d'Autenticació Governamental</p>
+    </div>
+
+    <!-- Phase 1: Credentials -->
+    <form *ngIf="!showTwoFA" [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" class="login-form">
+      <h2>Iniciar Sessió</h2>
+
+      <div class="form-group">
+        <label for="username">Nom d'usuari</label>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          placeholder="Introdueix el teu nom d'usuari"
+          autocomplete="username"
+          [class.error]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+        />
+        <div class="error-message" *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched">
+          El nom d'usuari és obligatori
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Contrasenya</label>
+        <div class="password-input-wrapper">
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Introdueix la teva contrasenya"
+            autocomplete="current-password"
+            [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          />
+          <button type="button" class="toggle-password" (click)="togglePasswordVisibility()">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        <div class="error-message" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+          La contrasenya és obligatòria
+        </div>
+      </div>
+
+      <div class="error-message" *ngIf="error">
+        {{ error }}
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="loading || loginForm.invalid">
+        <span *ngIf="!loading">Continuar</span>
+        <span *ngIf="loading">Verificant...</span>
+      </button>
+    </form>
+
+    <!-- Phase 2: 2FA -->
+    <form *ngIf="showTwoFA" [formGroup]="twoFAForm" (ngSubmit)="on2FASubmit()" class="login-form">
+      <h2>Verificació 2FA</h2>
+      <p class="info-text">
+        Introdueix el codi de 6 dígits de la teva aplicació d'autenticació
+        (Google Authenticator, Authy, etc.)
+      </p>
+
+      <div class="form-group">
+        <label for="totpCode">Codi TOTP</label>
+        <input
+          id="totpCode"
+          type="text"
+          formControlName="totpCode"
+          placeholder="000000"
+          maxlength="6"
+          autocomplete="one-time-code"
+          inputmode="numeric"
+          pattern="\d{6}"
+          [class.error]="twoFAForm.get('totpCode')?.invalid && twoFAForm.get('totpCode')?.touched"
+        />
+        <div class="error-message" *ngIf="twoFAForm.get('totpCode')?.invalid && twoFAForm.get('totpCode')?.touched">
+          El codi ha de ser de 6 dígits
+        </div>
+      </div>
+
+      <div class="error-message" *ngIf="error">
+        {{ error }}
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn-secondary" (click)="cancel2FA()" [disabled]="loading">
+          Tornar
+        </button>
+        <button type="submit" class="btn-primary" [disabled]="loading || twoFAForm.invalid">
+          <span *ngIf="!loading">Verificar</span>
+          <span *ngIf="loading">Verificant...</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="login-footer">
+      <p class="security-notice">
+        🔒 Connexió segura | Tots els accessos són registrats
+      </p>
+    </div>
+  </div>
+</div>
