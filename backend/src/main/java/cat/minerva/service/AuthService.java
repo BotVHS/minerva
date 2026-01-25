@@ -122,16 +122,34 @@ public class AuthService {
             return AuthResult.failed("Credencials incorrectes");
         }
 
-        // Comprovar si el 2FA està configurat
-        if (!user.twoFactorEnabled || user.totpSecret == null) {
-            auditService.logLoginFailed(username, "2FA not configured", ipAddress, userAgent);
-            return AuthResult.failed("El 2FA no està configurat. Contacta amb un administrador");
-        }
-
         // Credencials correctes! Reiniciar comptador d'intents
         user.resetFailedAttempts();
         userRepository.update(user);
 
+        // Comprovar si el 2FA està activat
+        if (!user.twoFactorEnabled || user.totpSecret == null) {
+            // 2FA no activat - login directe sense segona fase
+            LOG.infof("User %s logging in without 2FA (2FA not enabled)", username);
+
+            // Actualitzar informació de l'últim login
+            user.lastLoginAt = Instant.now();
+            user.lastLoginIp = ipAddress;
+            user.lastDeviceFingerprint = calculateDeviceFingerprint(userAgent);
+            userRepository.update(user);
+
+            // Generar tokens finals directament
+            String deviceFingerprint = calculateDeviceFingerprint(userAgent);
+            String accessToken = tokenService.generateAccessToken(user);
+            String refreshToken = tokenService.generateRefreshToken(user, deviceFingerprint, ipAddress);
+
+            auditService.logLoginSuccess(user, ipAddress, userAgent);
+
+            LOG.infof("Login successful for user: %s (without 2FA)", user.username);
+
+            return AuthResult.success(accessToken, refreshToken, user);
+        }
+
+        // 2FA activat - requerir verificació
         // Generar SessionToken temporal per la fase de 2FA
         // Aquest token només serveix per validar el 2FA, no per accedir a recursos
         String sessionToken = tokenService.generateAccessToken(user);

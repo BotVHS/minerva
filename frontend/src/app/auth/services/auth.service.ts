@@ -26,9 +26,21 @@ export class AuthService {
 
   /**
    * Login fase 1: Credencials
+   * Pot retornar:
+   * - pending2FA: true (si l'usuari té 2FA activat)
+   * - success: true amb tokens (si l'usuari NO té 2FA activat)
    */
   loginPhase1(credentials: LoginRequest): Observable<LoginPhase1Response> {
-    return this.http.post<LoginPhase1Response>(`${this.API_URL}/login`, credentials);
+    return this.http.post<LoginPhase1Response>(`${this.API_URL}/login`, credentials)
+      .pipe(
+        tap(response => {
+          // Si el login retorna success directe (sense 2FA), emmagatzemar tokens
+          if (response.success && response.accessToken && response.refreshToken && response.user) {
+            this.storeTokens(response.accessToken, response.refreshToken);
+            this.currentUserSubject.next(response.user);
+          }
+        })
+      );
   }
 
   /**

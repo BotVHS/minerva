@@ -48,10 +48,23 @@ export class LoginComponent {
 
     this.authService.loginPhase1(this.loginForm.value).subscribe({
       next: (response) => {
-        this.sessionToken = response.sessionToken;
-        this.userId = response.userId;
-        this.showTwoFA = true;
-        this.loading = false;
+        // Case 1: User has 2FA enabled - show 2FA form
+        if (response.pending2FA && response.sessionToken && response.userId) {
+          this.sessionToken = response.sessionToken;
+          this.userId = response.userId;
+          this.showTwoFA = true;
+          this.loading = false;
+        }
+        // Case 2: User does NOT have 2FA enabled - direct login success
+        else if (response.success && response.accessToken) {
+          this.loading = false;
+          this.router.navigate(['/dashboard']);
+        }
+        // Case 3: Error
+        else if (response.error) {
+          this.error = response.error;
+          this.loading = false;
+        }
       },
       error: (error) => {
         this.error = error.error?.error || 'Error en el login. Comprova les credencials.';

@@ -27,9 +27,19 @@ export interface LoginRequest {
 }
 
 export interface LoginPhase1Response {
-  pending2FA: boolean;
-  sessionToken: string;
-  userId: string;
+  // Case 1: Pending 2FA (when twoFactorEnabled = true)
+  pending2FA?: boolean;
+  sessionToken?: string;
+  userId?: string;
+
+  // Case 2: Direct success (when twoFactorEnabled = false)
+  success?: boolean;
+  accessToken?: string;
+  refreshToken?: string;
+  user?: User;
+
+  // Error case
+  error?: string;
 }
 
 export interface Verify2FARequest {
